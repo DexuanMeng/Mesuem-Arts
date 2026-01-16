@@ -18,18 +18,24 @@ const API_BASE_URL = 'http://10.10.20.248:8000'; // For development - your compu
 // const API_BASE_URL = 'https://your-backend.onrender.com'; // For production
 
 interface ScanResult {
-  status: 'match_found' | 'ai_analysis' | 'not_art';
+  status: 'match_found' | 'verified_result' | 'community_result' | 'ai_analysis' | 'not_art';
   artwork?: {
     id: number;
     title: string;
     artist: string;
     description: any;
     image_url: string;
-    similarity: number;
+    similarity?: number;
+    is_verified?: boolean;
+    source?: string;
+    confidence_score?: number;
+    confidence?: string;
   };
   analysis?: string;
   message?: string;
   ai_generated: boolean;
+  badge?: string;
+  cataloged?: boolean;
 }
 
 export default function ScanScreen() {
@@ -115,6 +121,58 @@ export default function ScanScreen() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
+  const reportIssue = async (artworkId: number) => {
+    Alert.alert(
+      'Report Issue',
+      'What is wrong with this artwork information?',
+      [
+        {
+          text: 'Wrong Title',
+          onPress: () => submitReport(artworkId, 'wrong_title'),
+        },
+        {
+          text: 'Wrong Artist',
+          onPress: () => submitReport(artworkId, 'wrong_artist'),
+        },
+        {
+          text: 'Not an Artwork',
+          onPress: () => submitReport(artworkId, 'not_artwork'),
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const submitReport = async (artworkId: number, issueType: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('artwork_id', artworkId.toString());
+      formData.append('user_id', 'anonymous'); // TODO: Get from auth
+      formData.append('issue_type', issueType);
+      formData.append('description', '');
+
+      const response = await fetch(`${API_BASE_URL}/report-issue`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.ok) {
+        Alert.alert('Thank You', 'Your report has been submitted. We will review it.');
+      } else {
+        Alert.alert('Error', 'Failed to submit report. Please try again.');
+      }
+    } catch (error) {
+      console.error('Report error:', error);
+      Alert.alert('Error', 'Failed to submit report. Please try again.');
+    }
+  };
+
   if (!permission) {
     return (
       <View style={styles.container}>
@@ -181,11 +239,17 @@ export default function ScanScreen() {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <ScrollView style={styles.modalScroll}>
-              {result?.status === 'match_found' && result.artwork && (
+              {/* Verified Result - Green Badge */}
+              {(result?.status === 'verified_result' || 
+                (result?.status === 'match_found' && result.artwork?.is_verified)) && 
+                result.artwork && (
                 <>
+                  <View style={styles.verifiedBadge}>
+                    <Text style={styles.verifiedBadgeText}>🏛️ Official Museum Data</Text>
+                  </View>
                   <Text style={styles.modalTitle}>{result.artwork.title}</Text>
                   <Text style={styles.modalArtist}>by {result.artwork.artist}</Text>
-                  {result.artwork.image_url && (
+                  {result.artwork.image_url && result.artwork.image_url !== 'placeholder_url' && (
                     <Image
                       source={{ uri: result.artwork.image_url }}
                       style={styles.artworkImage}
@@ -195,26 +259,93 @@ export default function ScanScreen() {
                   <Text style={styles.modalDescription}>
                     {typeof result.artwork.description === 'string'
                       ? result.artwork.description
-                      : JSON.stringify(result.artwork.description, null, 2)}
+                      : result.artwork.description?.description || 
+                        JSON.stringify(result.artwork.description, null, 2)}
                   </Text>
-                  <View style={styles.similarityBadge}>
-                    <Text style={styles.similarityText}>
-                      Match: {(result.artwork.similarity * 100).toFixed(1)}%
-                    </Text>
-                  </View>
+                  {result.artwork.similarity && (
+                    <View style={styles.similarityBadge}>
+                      <Text style={styles.similarityText}>
+                        Match: {(result.artwork.similarity * 100).toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
                 </>
               )}
 
-              {result?.status === 'ai_analysis' && result.analysis && (
+              {/* Community/AI Result - Orange Badge with Warning */}
+              {(result?.status === 'community_result' || 
+                (result?.status === 'match_found' && !result.artwork?.is_verified)) && 
+                result.artwork && (
                 <>
                   <View style={styles.aiBadge}>
-                    <Text style={styles.aiBadgeText}>AI Analysis (Unverified)</Text>
+                    <Text style={styles.aiBadgeText}>✨ AI Analysis</Text>
                   </View>
-                  <Text style={styles.modalTitle}>Artwork Analysis</Text>
-                  <Text style={styles.modalDescription}>{result.analysis}</Text>
+                  <Text style={styles.modalTitle}>{result.artwork.title}</Text>
+                  <Text style={styles.modalArtist}>by {result.artwork.artist}</Text>
+                  {result.artwork.image_url && result.artwork.image_url !== 'placeholder_url' && (
+                    <Image
+                      source={{ uri: result.artwork.image_url }}
+                      style={styles.artworkImage}
+                      resizeMode="contain"
+                    />
+                  )}
+                  <Text style={styles.modalDescription}>
+                    {typeof result.artwork.description === 'string'
+                      ? result.artwork.description
+                      : result.artwork.description?.description || 
+                        JSON.stringify(result.artwork.description, null, 2)}
+                  </Text>
+                  {result.artwork.similarity && (
+                    <View style={styles.similarityBadge}>
+                      <Text style={styles.similarityText}>
+                        Match: {(result.artwork.similarity * 100).toFixed(1)}%
+                      </Text>
+                    </View>
+                  )}
+                  {result.artwork.id && (
+                    <TouchableOpacity
+                      style={styles.reportButton}
+                      onPress={() => reportIssue(result.artwork!.id)}
+                    >
+                      <Text style={styles.reportButtonText}>Report Issue</Text>
+                    </TouchableOpacity>
+                  )}
                 </>
               )}
 
+              {/* AI Analysis (New Artwork) - Orange Badge */}
+              {result?.status === 'ai_analysis' && result.artwork && (
+                <>
+                  <View style={styles.aiBadge}>
+                    <Text style={styles.aiBadgeText}>✨ AI Estimate</Text>
+                  </View>
+                  <Text style={styles.modalTitle}>{result.artwork.title}</Text>
+                  <Text style={styles.modalArtist}>by {result.artwork.artist}</Text>
+                  <Text style={styles.modalDescription}>
+                    {typeof result.artwork.description === 'string'
+                      ? result.artwork.description
+                      : result.artwork.description?.description || 
+                        JSON.stringify(result.artwork.description, null, 2)}
+                  </Text>
+                  {result.artwork.confidence && (
+                    <View style={styles.confidenceBadge}>
+                      <Text style={styles.confidenceText}>
+                        Confidence: {result.artwork.confidence.toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                  {result.artwork.id && (
+                    <TouchableOpacity
+                      style={styles.reportButton}
+                      onPress={() => reportIssue(result.artwork!.id)}
+                    >
+                      <Text style={styles.reportButtonText}>Report Issue</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+
+              {/* Not Art */}
               {result?.status === 'not_art' && (
                 <>
                   <Text style={styles.modalTitle}>Not an Artwork</Text>
@@ -371,6 +502,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  verifiedBadge: {
+    backgroundColor: '#4CAF50',
+    padding: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  verifiedBadgeText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
+  },
   aiBadge: {
     backgroundColor: '#FF9800',
     padding: 8,
@@ -382,6 +525,31 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 12,
+  },
+  confidenceBadge: {
+    backgroundColor: '#9E9E9E',
+    padding: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 16,
+  },
+  confidenceText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  reportButton: {
+    backgroundColor: '#F44336',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  reportButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   closeButton: {
     backgroundColor: '#007AFF',

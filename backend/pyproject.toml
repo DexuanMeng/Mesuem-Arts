@@ -11,6 +11,9 @@ dependencies = [
     "pillow>=10.2.0",
     "python-dotenv==1.0.0",
     "python-multipart==0.0.6",
+    "requests>=2.31.0",
+    "sentence-transformers>=2.2.0",
     "supabase==2.0.3",
+    "torch>=2.0.0",
     "uvicorn[standard]==0.24.0",
 ]
