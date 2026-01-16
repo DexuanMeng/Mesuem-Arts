@@ -17,7 +17,7 @@ import {
   Dimensions,
   SafeAreaView,
 } from 'react-native';
-import { Building2, Sparkles, X, Play, MessageCircle } from 'lucide-react-native';
+import { MaterialCommunityIcons, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { colors, typography } from '../theme';
 
 const { width, height } = Dimensions.get('window');
@@ -86,12 +86,12 @@ export default function ResultCard({
           <View style={styles.badgeRow}>
             {isVerified ? (
               <View style={[styles.badge, styles.badgeVerified]}>
-                <Building2 size={14} color="#FFF" />
+                <MaterialCommunityIcons name="bank" size={14} color="#FFF" />
                 <Text style={styles.badgeText}>OFFICIAL COLLECTION</Text>
               </View>
             ) : (
               <View style={[styles.badge, styles.badgeAi]}>
-                <Sparkles size={14} color="#FFF" />
+                <MaterialCommunityIcons name="auto-fix" size={14} color="#FFF" />
                 <Text style={styles.badgeText}>AI ANALYSIS</Text>
               </View>
             )}
@@ -99,7 +99,7 @@ export default function ResultCard({
 
           {/* Close Button (Top Right) */}
           <TouchableOpacity style={styles.closeIcon} onPress={onClose}>
-            <X size={24} style={{ color: '#555' }} />
+            <Ionicons name="close" size={24} color="#555" />
           </TouchableOpacity>
 
           <ScrollView
@@ -169,7 +169,7 @@ export default function ResultCard({
               activeOpacity={0.8}
             >
               <View style={styles.playIconContainer}>
-                <Play size={24} color="#000" style={{ marginLeft: 4 }} />
+                <Ionicons name="play" size={24} color="#000" style={{ marginLeft: 4 }} />
               </View>
               <View>
                 <Text style={styles.playTitle}>Listen</Text>
@@ -178,7 +178,7 @@ export default function ResultCard({
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.askButton}>
-               <MessageCircle size={24} color="#FFF" />
+               <Ionicons name="chatbubble-outline" size={24} color="#FFF" />
             </TouchableOpacity>
           </SafeAreaView>
 

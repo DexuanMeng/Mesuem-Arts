@@ -19,7 +19,7 @@
     "expo-location": "~19.0.8",
     "expo-router": "~3.5.0",
     "expo-status-bar": "~3.0.9",
-    "lucide-react-native": "^0.344.0",
+    "@expo/vector-icons": "^14.0.0",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.16.0",
