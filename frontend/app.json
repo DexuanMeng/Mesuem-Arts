@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Museum Art Scanner",
+    "slug": "museum-art-scanner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.museumartscanner.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "frontImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.museumartscanner.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Museum Art Scanner to access your camera to scan artworks."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Museum Art Scanner to access your location to provide museum-specific results."
+        }
+      ]
+    ]
+  }
+}
