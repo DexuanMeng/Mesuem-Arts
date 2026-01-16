@@ -1,6 +1,8 @@
+// REPLACE content of: components/ResultCard.tsx
+
 /**
- * Result Card Component - Bottom Sheet Modal
- * Displays artwork results with trust badges
+ * Result Card Component - "The Floating Monolith"
+ * Premium Dark Mode UI for Museum Context
  */
 
 import React from 'react';
@@ -13,12 +15,14 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  SafeAreaView,
 } from 'react-native';
-import { Building2, Sparkles } from 'lucide-react-native';
+import { Building2, Sparkles, X, Play, MessageCircle } from 'lucide-react-native';
 import { colors, typography } from '../theme';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
+// --- KEEPING YOUR EXACT INTERFACES ---
 interface Artwork {
   id: number;
   title: string;
@@ -34,7 +38,7 @@ interface Artwork {
 interface ResultCardProps {
   visible: boolean;
   onClose: () => void;
-  artwork: Artwork;
+  artwork: Artwork | null; // Allow null to prevent crash
   similarity?: number;
   onReportIssue?: (artworkId: number) => void;
 }
@@ -46,16 +50,18 @@ export default function ResultCard({
   similarity,
   onReportIssue,
 }: ResultCardProps) {
+  if (!artwork) return null;
+
   const isVerified = artwork.is_verified ?? false;
+  
+  // Extract the text safely
   const descriptionText =
     typeof artwork.description === 'string'
       ? artwork.description
       : artwork.description?.description || '';
 
   const handlePlayAudio = () => {
-    // Mock audio player for now
     console.log('Playing audio guide for:', artwork.title);
-    // TODO: Implement audio playback
   };
 
   return (
@@ -66,110 +72,123 @@ export default function ResultCard({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
+        {/* Invisible Backdrop to close on tap */}
         <TouchableOpacity
           style={styles.backdrop}
           activeOpacity={1}
           onPress={onClose}
         />
+
+        {/* --- THE MONOLITH CARD --- */}
         <View style={styles.container}>
-          {/* Drag Handle */}
-          <View style={styles.dragHandle} />
+          
+          {/* 1. THE FLOATING TRUST BADGE (Overlapping Top) */}
+          <View style={styles.badgeRow}>
+            {isVerified ? (
+              <View style={[styles.badge, styles.badgeVerified]}>
+                <Building2 size={14} color="#FFF" />
+                <Text style={styles.badgeText}>OFFICIAL COLLECTION</Text>
+              </View>
+            ) : (
+              <View style={[styles.badge, styles.badgeAi]}>
+                <Sparkles size={14} color="#FFF" />
+                <Text style={styles.badgeText}>AI ANALYSIS</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Close Button (Top Right) */}
+          <TouchableOpacity style={styles.closeIcon} onPress={onClose}>
+            <X size={24} style={{ color: '#555' }} />
+          </TouchableOpacity>
 
           <ScrollView
             style={styles.scrollView}
+            contentContainerStyle={{ paddingBottom: 100 }} // Space for sticky button
             showsVerticalScrollIndicator={false}
           >
-            {/* Trust Badge */}
-            <View style={styles.badgeContainer}>
-              {isVerified ? (
-                <View style={styles.verifiedBadge}>
-                  <Building2 size={16} color={colors.verified} />
-                  <Text style={styles.verifiedBadgeText}>
-                    Official Museum Data
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.aiBadge}>
-                  <Sparkles size={16} color={colors.aiEstimate} />
-                  <Text style={styles.aiBadgeText}>AI Analysis (Est.)</Text>
-                </View>
-              )}
-            </View>
-
-            {/* Title - Large Serif */}
-            <Text style={styles.title}>{artwork.title}</Text>
-
-            {/* Artist & Date - Medium Sans, Grey */}
-            <View style={styles.metaContainer}>
-              <Text style={styles.artist}>by {artwork.artist}</Text>
-              {artwork.year && (
-                <Text style={styles.year}>{artwork.year}</Text>
-              )}
-            </View>
-
-            {/* Artwork Image */}
-            {artwork.image_url && artwork.image_url !== 'placeholder_url' && (
-              <Image
-                source={{ uri: artwork.image_url }}
-                style={styles.artworkImage}
-                resizeMode="contain"
-              />
-            )}
-
-            {/* The Dinner Party Fact - Highlighted Box */}
-            <View style={styles.factBox}>
-              <Text style={styles.factLabel}>Did You Know?</Text>
-              <Text style={styles.factText}>
-                {descriptionText || 'This artwork has a fascinating history waiting to be discovered.'}
+            {/* 2. HEADER IDENTITY */}
+            <View style={styles.header}>
+              <Text style={styles.title}>{artwork.title}</Text>
+              <Text style={styles.artist}>
+                {artwork.artist} {artwork.year ? ` • ${artwork.year}` : ''}
               </Text>
             </View>
 
-            {/* Additional Info */}
-            {artwork.description?.style && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Style:</Text>
-                <Text style={styles.infoValue}>{artwork.description.style}</Text>
-              </View>
+            {/* 3. THE "DINNER PARTY FACT" (Highlighted Hook) */}
+            <View style={[
+              styles.factBox, 
+              isVerified ? styles.borderVerified : styles.borderAi
+            ]}>
+              <Text style={styles.factText}>
+                "{descriptionText.slice(0, 150)}{descriptionText.length > 150 ? '...' : ''}"
+              </Text>
+            </View>
+
+            {/* 4. VISUAL ANCHOR (Thumbnail) */}
+            {artwork.image_url && artwork.image_url !== 'placeholder_url' && (
+              <Image
+                source={{ uri: artwork.image_url }}
+                style={styles.heroImage}
+                resizeMode="cover"
+              />
             )}
 
-            {similarity && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Match Confidence:</Text>
-                <Text style={styles.infoValue}>
-                  {(similarity * 100).toFixed(1)}%
-                </Text>
-              </View>
-            )}
+            {/* 5. DEEP DIVE DETAILS */}
+            <View style={styles.detailsContainer}>
+              {artwork.description?.style && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>STYLE</Text>
+                  <Text style={styles.detailValue}>{artwork.description.style}</Text>
+                </View>
+              )}
+              {similarity && (
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>MATCH ACCURACY</Text>
+                  <Text style={styles.detailValue}>{(similarity * 100).toFixed(0)}%</Text>
+                </View>
+              )}
+            </View>
 
-            {/* Report Button for Unverified */}
+            {/* Feedback Loop */}
             {!isVerified && onReportIssue && (
-              <TouchableOpacity
-                style={styles.reportButton}
+              <TouchableOpacity 
+                style={styles.reportLink}
                 onPress={() => onReportIssue(artwork.id)}
               >
-                <Text style={styles.reportButtonText}>Report Issue</Text>
+                <Text style={styles.reportText}>Report incorrect info</Text>
               </TouchableOpacity>
             )}
-
-            {/* Audio Button - Thumb Friendly */}
-            <TouchableOpacity
-              style={styles.audioButton}
-              onPress={handlePlayAudio}
-            >
-              <Text style={styles.audioButtonText}>🎵 Play Audio Guide</Text>
-            </TouchableOpacity>
           </ScrollView>
 
-          {/* Close Button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+          {/* 6. STICKY ACTION BAR (Thumb Zone) */}
+          <SafeAreaView style={styles.actionBar}>
+            <TouchableOpacity 
+              style={styles.playButton} 
+              onPress={handlePlayAudio}
+              activeOpacity={0.8}
+            >
+              <View style={styles.playIconContainer}>
+                <Play size={24} color="#000" style={{ marginLeft: 4 }} />
+              </View>
+              <View>
+                <Text style={styles.playTitle}>Listen</Text>
+                <Text style={styles.playSubtitle}>Audio Guide (2m)</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.askButton}>
+               <MessageCircle size={24} color="#FFF" />
+            </TouchableOpacity>
+          </SafeAreaView>
+
         </View>
       </View>
     </Modal>
   );
 }
 
+// --- MUSEUM DARK THEME STYLES ---
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -177,155 +196,192 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.overlay,
+    backgroundColor: 'rgba(0,0,0,0.3)', // Dim the camera view slightly
   },
   container: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
-    paddingTop: 12,
-    paddingBottom: 20,
+    height: '65%', // Takes up bottom 65% of screen
+    backgroundColor: '#121212', // OLED Black
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 20,
+    paddingTop: 24, // Space for the overlapping badge
   },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
+  
+  // Floating Badge Logic
+  badgeRow: {
+    position: 'absolute',
+    top: -16, // Pushes it UP out of the card
+    left: 24,
+    zIndex: 10,
   },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  badgeVerified: {
+    backgroundColor: '#065f46', // Emerald 800
+  },
+  badgeAi: {
+    backgroundColor: '#9a3412', // Orange 800
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  
+  closeIcon: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    padding: 8,
+    zIndex: 5,
+  },
+
   scrollView: {
     paddingHorizontal: 24,
+    marginTop: 12,
   },
-  badgeContainer: {
-    marginBottom: 16,
-  },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: `${colors.verified}20`,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    gap: 6,
-  },
-  verifiedBadgeText: {
-    ...typography.labelSmall,
-    color: colors.verified,
-  },
-  aiBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: `${colors.aiEstimate}20`,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    gap: 6,
-  },
-  aiBadgeText: {
-    ...typography.labelSmall,
-    color: colors.aiEstimate,
+
+  // Typography
+  header: {
+    marginBottom: 20,
+    marginTop: 10,
   },
   title: {
-    ...typography.headline1,
-    color: colors.text,
-    marginBottom: 8,
-  },
-  metaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 12,
+    fontSize: 32,
+    // Note: Ensure you load a serif font in App.tsx!
+    // fontFamily: 'PlayfairDisplay_700Bold', 
+    fontWeight: '700',
+    color: '#FFF',
+    marginBottom: 4,
+    lineHeight: 38,
   },
   artist: {
-    ...typography.body,
-    color: colors.textSecondary,
+    fontSize: 16,
+    color: '#888',
+    fontWeight: '400',
   },
-  year: {
-    ...typography.body,
-    color: colors.textTertiary,
-  },
-  artworkImage: {
-    width: '100%',
-    height: width * 0.8,
-    borderRadius: 12,
-    marginBottom: 24,
-    backgroundColor: colors.surface,
-  },
+
+  // The "Dinner Party Fact"
   factBox: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     padding: 16,
     borderRadius: 12,
     marginBottom: 24,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
+    borderLeftWidth: 4,
   },
-  factLabel: {
-    ...typography.label,
-    color: colors.primary,
-    marginBottom: 8,
-  },
+  borderVerified: { borderLeftColor: '#065f46' },
+  borderAi: { borderLeftColor: '#9a3412' },
+  
   factText: {
-    ...typography.body,
-    color: colors.text,
+    color: '#E0E0E0',
+    fontSize: 16,
     lineHeight: 24,
+    fontStyle: 'italic',
   },
-  infoRow: {
+
+  heroImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 24,
+    backgroundColor: '#222',
+  },
+
+  // Details
+  detailsContainer: {
     flexDirection: 'row',
-    marginBottom: 12,
-    gap: 8,
+    gap: 24,
+    marginBottom: 24,
   },
-  infoLabel: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
+  detailRow: {
+    gap: 4,
   },
-  infoValue: {
-    ...typography.bodySmall,
-    color: colors.text,
+  detailLabel: {
+    color: '#555',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  detailValue: {
+    color: '#CCC',
+    fontSize: 14,
     fontWeight: '600',
   },
-  reportButton: {
-    backgroundColor: colors.error,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+
+  reportLink: {
     marginTop: 8,
-    marginBottom: 16,
-    alignItems: 'center',
+    alignSelf: 'flex-start',
   },
-  reportButtonText: {
-    ...typography.label,
-    color: colors.text,
+  reportText: {
+    color: '#666',
+    fontSize: 12,
+    textDecorationLine: 'underline',
   },
-  audioButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 18,
+
+  // Sticky Action Bar
+  actionBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#121212', // Match container
+    borderTopWidth: 1,
+    borderTopColor: '#222',
     paddingHorizontal: 24,
-    borderRadius: 12,
-    marginTop: 8,
-    marginBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 30, // Safe area
+    flexDirection: 'row',
+    gap: 12,
+  },
+  playButton: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 60, // Thumb friendly
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 12,
+    gap: 12,
   },
-  audioButtonText: {
-    ...typography.label,
-    color: colors.background,
-    fontSize: 18,
-  },
-  closeButton: {
-    backgroundColor: colors.surface,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-    marginHorizontal: 24,
-    marginTop: 8,
+  playIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#000',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  closeButtonText: {
-    ...typography.label,
-    color: colors.text,
+  playTitle: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  playSubtitle: {
+    color: '#666',
+    fontSize: 12,
+  },
+  askButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#222',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
   },
 });

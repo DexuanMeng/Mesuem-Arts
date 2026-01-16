@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#050505"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -22,7 +22,7 @@
     "android": {
       "adaptiveIcon": {
         "frontImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#050505"
       },
       "package": "com.museumartscanner.app"
     },
